@@ -1,21 +1,35 @@
 import streamlit as st
-import pickle
 import numpy as np
 import pandas as pd
+import pickle
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 
-with open('best_model.pkl', 'rb') as f:
-    model = pickle.load(f)
+# Загрузка данных (или предобученных X и y)
+@st.cache_data
+def load_data():
+    df = pd.read_csv('diabetes.csv')  # Убедись, что этот файл лежит рядом
+    X = df.drop('Outcome', axis=1)
+    y = df['Outcome']
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    return X_scaled, y, scaler
 
-with open('scaler.pkl', 'rb') as f:
-    scaler = pickle.load(f)
+X_scaled, y, scaler = load_data()
 
-st.title("Прогнозирование диабета")
+st.title("Прогнозирование диабета (Random Forest с настройкой)")
 
-st.markdown("""
-Введите значения признаков пациента для предсказания вероятности наличия диабета. 
-Вы также можете изменить порог вероятности, чтобы управлять чувствительностью предсказания.
-""")
+st.markdown("Измените гиперпараметр `n_estimators` для переобучения модели Random Forest")
 
+# Гиперпараметр
+n_estimators = st.slider('Количество деревьев (n_estimators)', 10, 200, 100, 10)
+
+# Обучение модели
+model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+model.fit(X_scaled, y)
+
+# Форма ввода
 def user_input_features():
     Pregnancies = st.slider('Беременности', 0, 15, 1)
     Glucose = st.slider('Глюкоза', 40, 200, 120)
@@ -25,7 +39,7 @@ def user_input_features():
     BMI = st.slider('ИМТ', 15.0, 50.0, 25.0)
     DiabetesPedigreeFunction = st.slider('Наследственный фактор', 0.0, 2.5, 0.5, 0.01)
     Age = st.slider('Возраст', 20, 90, 30)
-    
+
     data = {
         'Pregnancies': Pregnancies,
         'Glucose': Glucose,
@@ -36,14 +50,12 @@ def user_input_features():
         'DiabetesPedigreeFunction': DiabetesPedigreeFunction,
         'Age': Age
     }
-    features = pd.DataFrame(data, index=[0])
-    return features
+    return pd.DataFrame(data, index=[0])
 
 input_df = user_input_features()
-
 input_scaled = scaler.transform(input_df)
 
-threshold = st.slider("Порог вероятности для положительного класса", 0.0, 1.0, 0.5, 0.05)
+threshold = st.slider("Порог вероятности", 0.0, 1.0, 0.5, 0.05)
 
 probability = model.predict_proba(input_scaled)[0, 1]
 prediction = int(probability >= threshold)
