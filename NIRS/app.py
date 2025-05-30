@@ -6,10 +6,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-# Загрузка данных (или предобученных X и y)
 @st.cache_data
 def load_data():
-    df = pd.read_csv('diabetes.csv')  # Убедись, что этот файл лежит рядом
+    df = pd.read_csv('diabetes.csv')  
     X = df.drop('Outcome', axis=1)
     y = df['Outcome']
     scaler = StandardScaler()
@@ -22,14 +21,11 @@ st.title("Прогнозирование диабета (Random Forest с нас
 
 st.markdown("Измените гиперпараметр `n_estimators` для переобучения модели Random Forest")
 
-# Гиперпараметр
 n_estimators = st.slider('Количество деревьев (n_estimators)', 10, 200, 100, 10)
 
-# Обучение модели
 model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
 model.fit(X_scaled, y)
 
-# Форма ввода
 def user_input_features():
     Pregnancies = st.slider('Беременности', 0, 15, 1)
     Glucose = st.slider('Глюкоза', 40, 200, 120)
